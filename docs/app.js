@@ -33,7 +33,7 @@ async function loadJson(path) {
 
 function buildAll() {
   const seen = new Set(state.feed.map(eventKey));
-  const feed = state.feed.map((e) => ({ ...e, when: e.first_seen, manual: false }));
+  const feed = state.feed.map((e) => ({ ...e, when: e.created || e.first_seen, manual: false }));
   const manual = state.manual
     .filter((e) => !seen.has(eventKey(e)))
     .map((e) => ({ ...e, when: e.date, manual: true }));

@@ -1,6 +1,6 @@
 # Ranking de clausulazos – Los liguis 2.0
 
-Lee el feed de la liga en Mister, registra cada fichaje por pago de cláusula y los publica en una web estática gratuita (GitHub Pages).
+Lee el feed de la liga en Mister (el mismo servicio que carga más entradas al bajar), registra cada fichaje por pago de cláusula con su fecha real y los publica en una web estática gratuita (GitHub Pages).
 
 ```
 scraper/mister_clausulazos.py   lee el feed y actualiza docs/data/clausulazos.json
@@ -8,7 +8,7 @@ docs/                           la web (index.html, app.js, style.css, data/)
 .github/workflows/actualizar.yml  lo ejecuta cada 3 horas y guarda los cambios
 worker/index.js                 servicio (Cloudflare Worker) para añadir clausulazos a mano con contraseña
 docs/config.js                  aquí se pone la URL del Worker
-tests/sample_feed.html          ejemplo de feed para probar el parser
+tests/                          pruebas del lector (python tests/test_scraper.py)
 ```
 
 ## Puesta en marcha
@@ -47,14 +47,17 @@ En Google Sites: *Insertar → Incrustar → Por URL* y pega la dirección de Gi
 
 ```bash
 pip install -r requirements.txt
-python scraper/mister_clausulazos.py --html tests/sample_feed.html --out /tmp/prueba.json
-MISTER_COOKIE="..." python scraper/mister_clausulazos.py   # contra Mister de verdad
+python tests/test_scraper.py                                # pruebas con datos de ejemplo
+MISTER_COOKIE="..." python scraper/mister_clausulazos.py    # contra Mister de verdad
+MISTER_COOKIE="..." python scraper/mister_clausulazos.py --full   # releer todo el histórico
 ```
+
+La primera ejecución recorre todo el feed hacia atrás (de 20 en 20) y guarda el histórico completo. Las siguientes solo piden páginas hasta enlazar con lo que ya está guardado. Los registros de la primera versión (sin fecha real) se actualizan solos al volver a verlos en el feed.
 
 ## Limitaciones conocidas
 
-- El feed solo muestra los movimientos más recientes. Si entre dos ejecuciones hay más movimientos de los que caben en el feed, se pierden los más antiguos. Si pasa, acorta el `cron` del workflow.
-- El feed no muestra hora en las entradas: la fecha que se guarda es la de detección.
-- Un mismo jugador clausulado entre los mismos dos managers por el mismo importe se cuenta una sola vez.
-- Esto lee tu propia cuenta de Mister sin API oficial. Si Mister cambia el HTML del feed, habrá que ajustar el parser.
+- El histórico llega hasta donde Mister conserve entradas en el feed. Lo anterior hay que añadirlo a mano.
+- Las fechas del feed vienen en hora de España y se guardan convertidas a UTC.
+- Esto lee tu propia cuenta de Mister sin API oficial. Si Mister cambia el formato del servicio `/ajax/feed`, habrá que ajustar el lector.
+- La cookie caduca cada cierto tiempo: cuando pase, el workflow falla con un aviso y hay que renovar el secreto `MISTER_COOKIE`.
 - La web es pública y muestra los nombres de manager de la liga.

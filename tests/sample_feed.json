@@ -1,0 +1,24 @@
+{
+  "pages": [
+    [
+      {"id": 962469068, "category": "gameweek_start", "created": "2026-10-28 21:39:35", "data": {"gameweek": 11}},
+      {"id": 960678759, "category": "transfer", "created": "2026-10-12 20:02:24", "data": [
+        {"id_transfer": 553124758, "id_uc_from": 14571878, "id_uc_to": 14689225, "type": "clause", "price": 2429610,
+         "from": "Laporta FC", "to": "Muñoz", "id": 392, "name": "Denis Suárez"}
+      ]},
+      {"id": 960678000, "category": "transfer", "created": "2026-10-12 19:00:00", "data": [
+        {"id_transfer": 553124000, "id_uc_from": 1, "id_uc_to": 14689225, "type": "market", "price": 1000000,
+         "from": "Mister", "to": "Muñoz", "id": 100, "name": "Jugador de mercado"}
+      ]}
+    ],
+    [
+      {"id": 950000002, "category": "transfer", "created": "2026-09-14 12:30:00", "data": [
+        {"id_transfer": 540000002, "id_uc_from": 14689225, "id_uc_to": 15414760, "type": "clause", "price": 6127500,
+         "from": "Muñoz", "to": "Juan Carlos al sueloooo", "id": 31355, "name": "Alexander Sørloth"},
+        {"id_transfer": 540000003, "id_uc_from": 15414760, "id_uc_to": 14571878, "type": "clause", "price": 3000000,
+         "from": "Juan Carlos al sueloooo", "to": "Laporta FC", "id": 555, "name": "Otro Jugador"}
+      ]},
+      {"id": 950000001, "category": "gameweek_start", "created": "2026-09-10 21:00:00", "data": {"gameweek": 3}}
+    ]
+  ]
+}
