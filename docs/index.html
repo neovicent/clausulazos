@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ranking de clausulazos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Ranking de clausulazos</h1>
+    <p id="subtitle" class="muted">Cargando…</p>
+  </header>
+
+  <main>
+    <section class="kpis" id="kpis"></section>
+
+    <section class="grid">
+      <div class="card"><h2>Quién más clausula</h2><div id="buyers"></div></div>
+      <div class="card"><h2>Quién más sufre clausulazos</h2><div id="sellers"></div></div>
+      <div class="card"><h2>Jugadores más clausulados</h2><div id="players"></div></div>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <h2>Todos los clausulazos</h2>
+        <input id="filter" type="search" placeholder="Filtrar por jugador o manager…" aria-label="Filtrar">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Jugador</th><th>Vendedor</th><th>Comprador</th><th class="num">Importe</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="muted small">En los clausulazos leídos del feed, la fecha es el momento en que el programa los detectó, no la hora exacta en que ocurrieron. Los añadidos a mano llevan la fecha indicada.</p>
+    </section>
+
+    <section class="card" id="admin" hidden>
+      <h2>Añadir clausulazos a mano</h2>
+
+      <form id="unlock" class="stack">
+        <label>Contraseña
+          <input id="password" type="password" autocomplete="current-password" required>
+        </label>
+        <div class="actions">
+          <button type="submit">Desbloquear</button>
+          <span id="unlock-status" class="status" aria-live="polite"></span>
+        </div>
+      </form>
+
+      <div id="editor" hidden>
+        <form id="add-form" class="form-grid">
+          <label>Fecha<input id="f-date" type="date" required></label>
+          <label>Jugador<input id="f-player" list="dl-players" required maxlength="60"></label>
+          <label>Vendedor<input id="f-from" list="dl-managers" required maxlength="60"></label>
+          <label>Comprador<input id="f-to" list="dl-managers" required maxlength="60"></label>
+          <label>Importe (€)<input id="f-price" inputmode="numeric" placeholder="6.127.500" required></label>
+          <div class="actions"><button type="submit">Añadir</button></div>
+        </form>
+        <datalist id="dl-players"></datalist>
+        <datalist id="dl-managers"></datalist>
+
+        <details>
+          <summary>Añadir varios de golpe</summary>
+          <form id="bulk-form" class="stack">
+            <p class="muted small">Una línea por clausulazo, con este formato: <code>fecha;jugador;vendedor;comprador;importe</code>. La fecha puede ser AAAA-MM-DD o DD/MM/AAAA. Máximo 100 líneas.</p>
+            <textarea id="bulk-text" rows="6" placeholder="14/09/2025;Alexander Sørloth;Muñoz;Juan Carlos al sueloooo;6.127.500"></textarea>
+            <div class="actions"><button type="submit">Añadir lista</button></div>
+          </form>
+        </details>
+
+        <div class="actions">
+          <span id="add-status" class="status" aria-live="polite"></span>
+          <button type="button" id="lock" class="ghost">Bloquear</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
