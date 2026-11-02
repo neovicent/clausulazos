@@ -1,5 +1,50 @@
 {
   "league": "Los liguis 2.0",
-  "updated": null,
-  "events": []
+  "updated": "2026-11-02T14:13:59+00:00",
+  "events": [
+    {
+      "id": "31355-14689225-15414760-6127500",
+      "player_id": "31355",
+      "player": "Alexander Sørloth",
+      "from_id": "14689225",
+      "from": "Muñoz",
+      "to_id": "15414760",
+      "to": "Juan Carlos al sueloooo",
+      "price": 6127500,
+      "first_seen": "2026-11-02T14:13:59+00:00"
+    },
+    {
+      "id": "62904-14715516-14689225-27150000",
+      "player_id": "62904",
+      "player": "Yan Diomande",
+      "from_id": "14715516",
+      "from": "Florentineza CF",
+      "to_id": "14689225",
+      "to": "Muñoz",
+      "price": 27150000,
+      "first_seen": "2026-11-02T14:13:59+00:00"
+    },
+    {
+      "id": "51135-15414760-15477566-16266000",
+      "player_id": "51135",
+      "player": "Pablo Barrios",
+      "from_id": "15414760",
+      "from": "Juan Carlos al sueloooo",
+      "to_id": "15477566",
+      "to": "Jacacu90",
+      "price": 16266000,
+      "first_seen": "2026-11-02T14:13:59+00:00"
+    },
+    {
+      "id": "561-14572794-15477566-17626020",
+      "player_id": "561",
+      "player": "Marcos Llorente",
+      "from_id": "14572794",
+      "from": "Minabo de Kief",
+      "to_id": "15477566",
+      "to": "Jacacu90",
+      "price": 17626020,
+      "first_seen": "2026-11-02T14:13:59+00:00"
+    }
+  ]
 }
