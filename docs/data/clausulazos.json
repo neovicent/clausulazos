@@ -1,9 +1,9 @@
 {
   "league": "Los liguis 2.0",
-  "updated": "2026-11-02T14:13:59+00:00",
+  "updated": "2026-11-03T09:34:16+00:00",
   "events": [
     {
-      "id": "31355-14689225-15414760-6127500",
+      "id": "t556996692",
       "player_id": "31355",
       "player": "Alexander Sørloth",
       "from_id": "14689225",
@@ -11,10 +11,10 @@
       "to_id": "15414760",
       "to": "Juan Carlos al sueloooo",
       "price": 6127500,
-      "first_seen": "2026-11-02T14:13:59+00:00"
+      "created": "2026-11-01T16:01:40+00:00"
     },
     {
-      "id": "62904-14715516-14689225-27150000",
+      "id": "t556988032",
       "player_id": "62904",
       "player": "Yan Diomande",
       "from_id": "14715516",
@@ -22,10 +22,10 @@
       "to_id": "14689225",
       "to": "Muñoz",
       "price": 27150000,
-      "first_seen": "2026-11-02T14:13:59+00:00"
+      "created": "2026-11-01T15:58:01+00:00"
     },
     {
-      "id": "51135-15414760-15477566-16266000",
+      "id": "t556846916",
       "player_id": "51135",
       "player": "Pablo Barrios",
       "from_id": "15414760",
@@ -33,10 +33,10 @@
       "to_id": "15477566",
       "to": "Jacacu90",
       "price": 16266000,
-      "first_seen": "2026-11-02T14:13:59+00:00"
+      "created": "2026-10-31T15:58:21+00:00"
     },
     {
-      "id": "561-14572794-15477566-17626020",
+      "id": "t556846600",
       "player_id": "561",
       "player": "Marcos Llorente",
       "from_id": "14572794",
@@ -44,7 +44,41 @@
       "to_id": "15477566",
       "to": "Jacacu90",
       "price": 17626020,
-      "first_seen": "2026-11-02T14:13:59+00:00"
+      "created": "2026-10-31T15:50:16+00:00"
+    },
+    {
+      "id": "t555738098",
+      "player_id": "68383",
+      "player": "Thiago Fernández",
+      "from_id": "15414760",
+      "from": "Juan Carlos al sueloooo",
+      "to_id": "14575379",
+      "to": "Colonques",
+      "price": 1566000,
+      "created": "2026-10-25T19:19:20+00:00"
+    },
+    {
+      "id": "t554013514",
+      "player_id": "70939",
+      "player": "Yeremay Hernández",
+      "from_id": "15477566",
+      "from": "Jacacu90",
+      "to_id": "14575379",
+      "to": "Colonques",
+      "price": 9636000,
+      "created": "2026-10-16T22:15:22+00:00"
+    },
+    {
+      "id": "t553124758",
+      "player_id": "392",
+      "player": "Denis Suárez",
+      "from_id": "14571878",
+      "from": "Laporta FC",
+      "to_id": "14689225",
+      "to": "Muñoz",
+      "price": 2429610,
+      "created": "2026-10-12T18:02:24+00:00"
     }
-  ]
+  ],
+  "complete_history": true
 }
