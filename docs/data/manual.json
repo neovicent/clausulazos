@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-c2c63199-91f2-4b63-b57a-25e8bc242450",
+      "player": "Roger Hinojo",
+      "from": "Florentineza CF",
+      "to": "La niña mala",
+      "price": 4610768,
+      "date": "2026-09-13"
+    },
+    {
       "id": "manual-bfb1a348-c587-44a3-9230-9d4a7d019cdd",
       "player": "Alfonso Herrero",
       "from": "Muñoz",
