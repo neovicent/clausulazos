@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-760ebabc-89c4-4c88-adf3-32a4aa75d8c5",
+      "player": "César Tárrega",
+      "from": "Juan Carlos al sueloooo",
+      "to": "Muñoz",
+      "price": 3621000,
+      "date": "2026-08-25"
+    },
+    {
       "id": "manual-9b281ca6-4c1c-4e86-96a7-f9d38655ebbc",
       "player": "Pere Milla",
       "from": "Laporta FC",
