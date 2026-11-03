@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-4e290f4e-81a3-4cc2-8d32-5bf00be1248a",
+      "player": "Iván Martín",
+      "from": "Minabo de Kief",
+      "to": "Todo Mal",
+      "price": 3303000,
+      "date": "2026-09-06"
+    },
+    {
       "id": "manual-5448fef0-db6d-45ca-b6ea-d8a536a9fc19",
       "player": "Asier Villalibre",
       "from": "La niña mala",
