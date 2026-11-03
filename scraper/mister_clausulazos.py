@@ -106,7 +106,8 @@ def make_fetcher(cookie: str) -> tuple[Callable[[int], list[dict]], dict]:
         "Referer": FEED_URL,
     }
 
-    def fetch_page(offset: int) -> list[dict]:
+    def fetch_page(offset: int) -> tuple[list[dict], bool]:
+        """Devuelve (entradas, es_el_final). Mister responde status 'end' cuando no hay más."""
         resp = session.post(
             AJAX_URL,
             data={"end": "false", "loading": "true", "offset": offset, "cardsPerPage": PAGE_SIZE},
@@ -118,9 +119,10 @@ def make_fetcher(cookie: str) -> tuple[Callable[[int], list[dict]], dict]:
             body = resp.json()
         except ValueError:
             raise FeedError("La respuesta del feed no es JSON: lo más probable es que la sesión haya caducado.")
-        if body.get("status") != "ok":
-            raise FeedError(f"Mister respondió status={body.get('status')!r}: ¿sesión caducada?")
-        return body.get("data") or []
+        status = body.get("status")
+        if status not in ("ok", "end"):
+            raise FeedError(f"Mister respondió status={status!r}: ¿sesión caducada?")
+        return body.get("data") or [], status == "end"
 
     return fetch_page, cfg
 
@@ -164,7 +166,7 @@ def parse_items(items: list[dict], community_id: int | None = None) -> list[dict
     return events
 
 
-def collect(fetch_page: Callable[[int], list[dict]], known_ids: set[str], full: bool,
+def collect(fetch_page: Callable[[int], tuple[list[dict], bool]], known_ids: set[str], full: bool,
             pause: float = PAUSE_SECONDS, community_id: int | None = None) -> tuple[list[dict], bool, int]:
     """Pide páginas del feed hacia atrás.
 
@@ -176,8 +178,10 @@ def collect(fetch_page: Callable[[int], list[dict]], known_ids: set[str], full: 
     reached_end = False
     pages = 0
     for page in range(MAX_PAGES):
-        items = fetch_page(page * PAGE_SIZE)
+        offset = page * PAGE_SIZE
+        items, ended = fetch_page(offset)
         if not items:
+            print(f"  offset {offset}: sin entradas ({'fin del feed' if ended else 'respuesta vacía'})")
             reached_end = True
             break
         fresh = {it.get("id") for it in items} - seen_feed_ids
@@ -188,6 +192,11 @@ def collect(fetch_page: Callable[[int], list[dict]], known_ids: set[str], full: 
         seen_feed_ids |= fresh
         events = parse_items(items, community_id)
         found.extend(events)
+        print(f"  offset {offset}: {len(items)} entradas, {len(events)} clausulazos"
+              f"{' (fin del feed)' if ended else ''}")
+        if ended:                  # Mister avisa de que no hay más páginas
+            reached_end = True
+            break
         if not full and any(ev["id"] in known_ids for ev in events):
             break                  # ya hemos enlazado con lo que teníamos guardado
         time.sleep(pause)
@@ -258,7 +267,8 @@ def main() -> int:
         return 4
 
     if pages == 0:
-        print("ERROR: el feed no devolvió ninguna entrada. Revisa la cookie.", file=sys.stderr)
+        print("ERROR: el feed no devolvió ninguna entrada (ni siquiera en la primera petición). "
+              "Revisa la cookie o avisa: puede que Mister solo sirva el feed desde offset=20.", file=sys.stderr)
         return 3
 
     added, upgraded = merge(store, found)

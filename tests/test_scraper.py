@@ -21,7 +21,7 @@ def fake_fetcher():
     def fetch(offset):
         calls.append(offset)
         index = offset // m.PAGE_SIZE
-        return PAGES[index] if index < len(PAGES) else []
+        return (PAGES[index] if index < len(PAGES) else []), False
 
     fetch.calls = calls
     return fetch
@@ -59,7 +59,8 @@ class FakeSession:
         if (headers or {}).get("X-Auth") != "abc123def456":
             return FakeResponse(status=401)
         index = data["offset"] // m.PAGE_SIZE
-        return FakeResponse(body={"status": "ok", "data": PAGES[index] if index < len(PAGES) else []})
+        data = PAGES[index] if index < len(PAGES) else []
+        return FakeResponse(body={"status": "ok" if data else "end", "data": data})
 
 
 class ParseTests(unittest.TestCase):
@@ -100,8 +101,19 @@ class CollectTests(unittest.TestCase):
         self.assertFalse(reached_end)
         self.assertEqual(pages, 1)
 
+    def test_status_end_con_datos_se_aprovecha(self):
+        # Si Mister marca 'end' en una página con entradas, se guardan y se para.
+        calls = []
+
+        def fetch(offset):
+            calls.append(offset)
+            return PAGES[offset // m.PAGE_SIZE], offset // m.PAGE_SIZE == 1
+
+        found, reached_end, pages = m.collect(fetch, set(), full=True, pause=0)
+        self.assertEqual((len(found), reached_end, pages, calls), (3, True, 2, [0, 20]))
+
     def test_pagina_repetida_cuenta_como_final(self):
-        _, reached_end, pages = m.collect(lambda offset: PAGES[0], set(), full=True, pause=0)
+        _, reached_end, pages = m.collect(lambda offset: (PAGES[0], False), set(), full=True, pause=0)
         self.assertTrue(reached_end)
         self.assertEqual(pages, 1)
 
@@ -154,8 +166,9 @@ class SessionTests(unittest.TestCase):
         FakeSession.instances.clear()
         with mock.patch.object(m.requests, "Session", FakeSession):
             fetch, cfg = m.make_fetcher("sid=aaa; otra=b=c; ; basura")
-            self.assertEqual(len(fetch(0)), 3)
-            self.assertEqual(len(fetch(20)), 2)
+            self.assertEqual(len(fetch(0)[0]), 3)
+            self.assertEqual(len(fetch(20)[0]), 2)
+            self.assertEqual(fetch(40), ([], True))   # status 'end': no es un error
         s = FakeSession.instances[-1]
         self.assertEqual(s.gets[0][0], m.FEED_URL)
         self.assertEqual({c.name: c.value for c in s.cookies}, {"sid": "aaa", "otra": "b=c"})
