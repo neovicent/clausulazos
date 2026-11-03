@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-f87ef8e5-c749-47ea-9d59-3e804d4c6784",
+      "player": "José Giménez",
+      "from": "Juan Carlos al sueloooo",
+      "to": "Colonques",
+      "price": 1525500,
+      "date": "2026-09-01"
+    },
+    {
       "id": "manual-6f08bbc1-fc86-4498-b8a9-83c445fbdb12",
       "player": "Thomas Lemar",
       "from": "Muñoz",
