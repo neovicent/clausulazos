@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-bfb1a348-c587-44a3-9230-9d4a7d019cdd",
+      "player": "Alfonso Herrero",
+      "from": "Muñoz",
+      "to": "La niña mala",
+      "price": 5079000,
+      "date": "2026-08-19"
+    },
+    {
       "id": "manual-566f10a1-dac6-4aa0-bad6-ab6efd047ad6",
       "player": "Abel Bretones",
       "from": "Colonques",
