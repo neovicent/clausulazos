@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-566f10a1-dac6-4aa0-bad6-ab6efd047ad6",
+      "player": "Abel Bretones",
+      "from": "Colonques",
+      "to": "Florentineza CF",
+      "price": 4166833,
+      "date": "2026-09-02"
+    },
+    {
       "id": "manual-843ddc94-5f85-4c0f-a7d1-910745875eca",
       "player": "Aitor Fernández",
       "from": "Colonques",
