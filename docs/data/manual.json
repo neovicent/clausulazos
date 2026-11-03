@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-7fe25df0-a41d-488b-9909-bf32c5b1668d",
+      "player": "Unai Núñez",
+      "from": "Colonques",
+      "to": "La niña mala",
+      "price": 3030303,
+      "date": "2026-08-31"
+    },
+    {
       "id": "manual-160f274c-5512-499d-ac56-a4072611f89b",
       "player": "Adrià Altimira",
       "from": "Minabo de Kief",
