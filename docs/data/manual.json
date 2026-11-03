@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-843ddc94-5f85-4c0f-a7d1-910745875eca",
+      "player": "Aitor Fernández",
+      "from": "Colonques",
+      "to": "Muñoz",
+      "price": 1579500,
+      "date": "2026-10-01"
+    },
+    {
       "id": "manual-7d39a139-ceff-48ab-ace5-0bd9c48e8f8d",
       "player": "Hector Fort",
       "from": "Muñoz",
