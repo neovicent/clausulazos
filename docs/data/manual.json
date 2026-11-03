@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-dd7683e2-d448-4790-b45f-25ac2e7fb241",
+      "player": "Carlos Dotor",
+      "from": "La niña mala",
+      "to": "Todo Mal",
+      "price": 1081500,
+      "date": "2026-08-03"
+    },
+    {
       "id": "manual-0b99c31b-25cc-4ff9-933f-5da79302ad85",
       "player": "Xavi Espart",
       "from": "Muñoz",
