@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-1ae702fa-8203-4a31-9a8a-8a09e212309d",
+      "player": "Carlos Dotor",
+      "from": "Todo Mal",
+      "to": "Colonques",
+      "price": 1944000,
+      "date": "2026-08-29"
+    },
+    {
       "id": "manual-dd7683e2-d448-4790-b45f-25ac2e7fb241",
       "player": "Carlos Dotor",
       "from": "La niña mala",
