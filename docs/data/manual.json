@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-7d39a139-ceff-48ab-ace5-0bd9c48e8f8d",
+      "player": "Hector Fort",
+      "from": "Muñoz",
+      "to": "Colonques",
+      "price": 1326000,
+      "date": "2026-08-30"
+    },
+    {
       "id": "manual-a07996d4-ba80-43aa-a146-ad4381739a0d",
       "player": "Roy Revivo",
       "from": "Muñoz",
