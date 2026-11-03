@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-80203640-0df1-4f3d-b0e3-3db73d9064b5",
+      "player": "Dani Cárdenas",
+      "from": "Florentineza CF",
+      "to": "Co",
+      "price": 1000000,
+      "date": "2026-08-21"
+    },
+    {
       "id": "manual-b074abfc-d782-48b6-b11b-b68dccbfa84c",
       "player": "P. Aubameyang",
       "from": "Muñoz",
