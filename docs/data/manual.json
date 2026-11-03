@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-44732145-55c0-4f2f-997c-ebd030f51d0c",
+      "player": "Roger Brugué",
+      "from": "Florentineza CF",
+      "to": "Colonques",
+      "price": 2666666,
+      "date": "2026-09-02"
+    },
+    {
       "id": "manual-80203640-0df1-4f3d-b0e3-3db73d9064b5",
       "player": "Dani Cárdenas",
       "from": "Florentineza CF",
