@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-160f274c-5512-499d-ac56-a4072611f89b",
+      "player": "Adrià Altimira",
+      "from": "Minabo de Kief",
+      "to": "Todo Mal",
+      "price": 1764000,
+      "date": "2026-08-03"
+    },
+    {
       "id": "manual-c2c63199-91f2-4b63-b57a-25e8bc242450",
       "player": "Roger Hinojo",
       "from": "Florentineza CF",
