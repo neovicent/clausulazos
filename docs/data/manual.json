@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-1e9203f1-eefa-4726-8ea9-a1c7f54ff65b",
+      "player": "P. Aubameyang",
+      "from": "Juan Carlos al sueloooo",
+      "to": "Muñoz",
+      "price": 2650500,
+      "date": "2026-08-08"
+    },
+    {
       "id": "manual-52658846-954b-47bc-8688-d296db826ec1",
       "player": "Iván Martín",
       "from": "Todo Mal",
