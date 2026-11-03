@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-b074abfc-d782-48b6-b11b-b68dccbfa84c",
+      "player": "P. Aubameyang",
+      "from": "Muñoz",
+      "to": "Florentineza CF",
+      "price": 9549750,
+      "date": "2026-08-10"
+    },
+    {
       "id": "manual-1e9203f1-eefa-4726-8ea9-a1c7f54ff65b",
       "player": "P. Aubameyang",
       "from": "Juan Carlos al sueloooo",
