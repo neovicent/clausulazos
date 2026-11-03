@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-6f08bbc1-fc86-4498-b8a9-83c445fbdb12",
+      "player": "Thomas Lemar",
+      "from": "Muñoz",
+      "to": "Colonques",
+      "price": 1707000,
+      "date": "2026-09-18"
+    },
+    {
       "id": "manual-44732145-55c0-4f2f-997c-ebd030f51d0c",
       "player": "Roger Brugué",
       "from": "Florentineza CF",
