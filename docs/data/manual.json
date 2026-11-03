@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-9b281ca6-4c1c-4e86-96a7-f9d38655ebbc",
+      "player": "Pere Milla",
+      "from": "Laporta FC",
+      "to": "Muñoz",
+      "price": 3072000,
+      "date": "2026-08-11"
+    },
+    {
       "id": "manual-1085b4c5-2a26-4ec4-9d1d-ccfb6770284f",
       "player": "Facundo Gonzalez",
       "from": "Muñoz",
