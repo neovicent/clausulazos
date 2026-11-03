@@ -16,7 +16,8 @@ tests/                          pruebas del lector (python tests/test_scraper.py
 1. **Crea un repositorio** en GitHub (público: GitHub Pages gratis lo exige) y sube esta carpeta.
 2. **Guarda tu sesión de Mister como secreto.** Entra en Mister con Google, abre el feed de Los liguis 2.0 y pulsa F12 → pestaña *Red*. Recarga, pulsa la petición `feed` y, en *Cabeceras de la solicitud*, copia el valor completo de `Cookie`. En GitHub: *Settings → Secrets and variables → Actions → New repository secret*, con nombre `MISTER_COOKIE`.
    - La cookie es como una contraseña: no la pegues en archivos del repositorio ni la compartas.
-   - Si tienes varias ligas, copia la cookie con Los liguis 2.0 seleccionada.
+   - Si tienes varias ligas, copia la cookie con Los liguis 2.0 seleccionada. El script comprueba el nombre de la liga activa y se detiene con un aviso si no coincide (puedes cambiarlo con la variable `MISTER_LEAGUE_NAME`).
+   - Solo necesitas la cookie: el token `X-Auth` que Mister exige para pedir más entradas lo lee el propio script de la página `/feed` en cada ejecución.
    - Caduca cada cierto tiempo. Cuando eso pase, el workflow fallará con un aviso y bastará con pegar una cookie nueva en el secreto.
 3. **Activa la web:** *Settings → Pages → Build and deployment → Deploy from a branch → `main` / carpeta `/docs`*.
 4. **Primera ejecución:** pestaña *Actions → Actualizar clausulazos → Run workflow*. Tu web quedará en `https://<usuario>.github.io/<repositorio>/`.

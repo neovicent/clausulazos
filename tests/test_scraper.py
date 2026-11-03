@@ -3,11 +3,16 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scraper"))
+import requests
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "scraper"))
 import mister_clausulazos as m  # noqa: E402
 
-PAGES = json.loads((Path(__file__).with_name("sample_feed.json")).read_text(encoding="utf-8"))["pages"]
+PAGES = json.loads((HERE / "sample_feed.json").read_text(encoding="utf-8"))["pages"]
+PAGE_HTML = (HERE / "sample_page.html").read_text(encoding="utf-8")
 
 
 def fake_fetcher():
@@ -22,7 +27,42 @@ def fake_fetcher():
     return fetch
 
 
-class ScraperTests(unittest.TestCase):
+class FakeResponse:
+    def __init__(self, text="", body=None, status=200):
+        self.text, self._body, self.status_code = text, body, status
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise requests.HTTPError(f"{self.status_code} Client Error")
+
+    def json(self):
+        if self._body is None:
+            raise ValueError("no es JSON")
+        return self._body
+
+
+class FakeSession:
+    """Simula la web: /feed con el token y /ajax/feed, que exige el token en X-Auth."""
+    instances = []
+
+    def __init__(self):
+        self.cookies = requests.cookies.RequestsCookieJar()
+        self.gets, self.posts = [], []
+        FakeSession.instances.append(self)
+
+    def get(self, url, headers=None, timeout=None):
+        self.gets.append((url, headers))
+        return FakeResponse(text=PAGE_HTML)
+
+    def post(self, url, data=None, headers=None, timeout=None):
+        self.posts.append((url, data, headers))
+        if (headers or {}).get("X-Auth") != "abc123def456":
+            return FakeResponse(status=401)
+        index = data["offset"] // m.PAGE_SIZE
+        return FakeResponse(body={"status": "ok", "data": PAGES[index] if index < len(PAGES) else []})
+
+
+class ParseTests(unittest.TestCase):
     def test_parse_solo_clausulas(self):
         events = m.parse_items(PAGES[0])
         self.assertEqual(len(events), 1)  # ni inicio de jornada ni fichaje de mercado
@@ -35,6 +75,16 @@ class ScraperTests(unittest.TestCase):
     def test_varios_fichajes_en_una_entrada(self):
         self.assertEqual(len(m.parse_items(PAGES[1])), 2)
 
+    def test_filtra_por_comunidad(self):
+        item = {"id": 1, "category": "transfer", "created": "2026-10-12 20:02:24", "id_community": 999,
+                "data": [{"id_transfer": 1, "id_uc_from": 1, "id_uc_to": 2, "type": "clause", "price": 5,
+                          "from": "A", "to": "B", "id": 7, "name": "J"}]}
+        self.assertEqual(m.parse_items([item], community_id=2337019), [])
+        self.assertEqual(len(m.parse_items([item], community_id=999)), 1)
+        self.assertEqual(len(m.parse_items([item], community_id=None)), 1)
+
+
+class CollectTests(unittest.TestCase):
     def test_recorrido_completo(self):
         fetch = fake_fetcher()
         found, reached_end, pages = m.collect(fetch, set(), full=True, pause=0)
@@ -51,16 +101,12 @@ class ScraperTests(unittest.TestCase):
         self.assertEqual(pages, 1)
 
     def test_pagina_repetida_cuenta_como_final(self):
-        calls = []
-
-        def repetidor(offset):
-            calls.append(offset)
-            return PAGES[0]
-
-        _, reached_end, pages = m.collect(repetidor, set(), full=True, pause=0)
+        _, reached_end, pages = m.collect(lambda offset: PAGES[0], set(), full=True, pause=0)
         self.assertTrue(reached_end)
         self.assertEqual(pages, 1)
 
+
+class MergeTests(unittest.TestCase):
     def test_merge_sin_duplicados_y_ordenado(self):
         store = {"events": []}
         found, _, _ = m.collect(fake_fetcher(), set(), full=True, pause=0)
@@ -83,6 +129,50 @@ class ScraperTests(unittest.TestCase):
         self.assertEqual(sorloth["id"], "t540000002")
         self.assertEqual(sorloth["created"], "2026-09-14T10:30:00+00:00")
         self.assertNotIn("first_seen", sorloth)
+
+
+class SessionTests(unittest.TestCase):
+    def test_extrae_token_de_la_pagina(self):
+        cfg = m.extract_cfg(PAGE_HTML)
+        self.assertEqual(cfg["auth"], "abc123def456")  # no se confunde con firebase "auth_domain"
+
+    def test_pagina_sin_configuracion(self):
+        with self.assertRaises(m.FeedError):
+            m.extract_cfg("<html><body>Inicia sesión</body></html>")
+
+    def test_pagina_sin_token(self):
+        with self.assertRaises(m.FeedError):
+            m.extract_cfg('<script>var _FG_cfg = {"auth":""};</script>')
+
+    def test_liga_activa(self):
+        cfg = m.extract_cfg(PAGE_HTML)
+        self.assertEqual(m.check_league(cfg, "Los liguis 2.0"), 2337019)  # sin distinguir mayúsculas
+        with self.assertRaises(m.FeedError):
+            m.check_league(cfg, "Otra liga")
+
+    def test_envia_cookie_y_token(self):
+        FakeSession.instances.clear()
+        with mock.patch.object(m.requests, "Session", FakeSession):
+            fetch, cfg = m.make_fetcher("sid=aaa; otra=b=c; ; basura")
+            self.assertEqual(len(fetch(0)), 3)
+            self.assertEqual(len(fetch(20)), 2)
+        s = FakeSession.instances[-1]
+        self.assertEqual(s.gets[0][0], m.FEED_URL)
+        self.assertEqual({c.name: c.value for c in s.cookies}, {"sid": "aaa", "otra": "b=c"})
+        url, data, headers = s.posts[0]
+        self.assertEqual(url, m.AJAX_URL)
+        self.assertEqual(data, {"end": "false", "loading": "true", "offset": 0, "cardsPerPage": 20})
+        self.assertEqual(headers["X-Auth"], "abc123def456")
+        self.assertEqual(headers["X-Requested-With"], "XMLHttpRequest")
+
+    def test_error_http_se_propaga(self):
+        class SinPermiso(FakeSession):
+            def post(self, *a, **k):
+                return FakeResponse(status=401)
+        with mock.patch.object(m.requests, "Session", SinPermiso):
+            fetch, _ = m.make_fetcher("sid=aaa")
+            with self.assertRaises(requests.HTTPError):
+                fetch(0)
 
 
 if __name__ == "__main__":

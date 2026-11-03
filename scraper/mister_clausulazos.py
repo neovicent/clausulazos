@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Registra los clausulazos de una liga Mister y los guarda en un JSON.
 
-Usa el mismo servicio que el feed cuando se baja para cargar más entradas
-(POST /ajax/feed, de 20 en 20) y se queda con los fichajes de tipo "clause".
+Hace lo mismo que el navegador al abrir el feed y bajar para cargar más:
+1. Pide /feed con tu sesión y lee de la página el token de acceso (_FG_cfg.auth).
+2. Pide /ajax/feed de 20 en 20 enviando ese token, y se queda con los fichajes
+   de tipo "clause".
 
 Uso normal (con tu sesión de Mister en la variable MISTER_COOKIE):
     MISTER_COOKIE="..." python scraper/mister_clausulazos.py
@@ -15,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -26,7 +29,8 @@ import requests
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUT = ROOT / "docs" / "data" / "clausulazos.json"
-ORIGIN = "https://mister.mundodeportivo.com"
+HOST = "mister.mundodeportivo.com"
+ORIGIN = f"https://{HOST}"
 FEED_URL = f"{ORIGIN}/feed"
 AJAX_URL = f"{ORIGIN}/ajax/feed"
 LEAGUE_NAME = os.environ.get("MISTER_LEAGUE_NAME", "Los liguis 2.0")
@@ -34,10 +38,91 @@ SITE_TZ = ZoneInfo("Europe/Madrid")  # las fechas del feed vienen en hora de Esp
 PAGE_SIZE = 20
 MAX_PAGES = 500          # tope de seguridad: 10.000 entradas del feed
 PAUSE_SECONDS = 0.5      # pausa entre páginas para no saturar el servicio
+USER_AGENT = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+              "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 
 
 class FeedError(Exception):
-    """Problema al leer el feed (cookie caducada, formato inesperado...)."""
+    """Problema al leer el feed (cookie caducada, liga equivocada, formato inesperado...)."""
+
+
+def same_text(a: str, b: str) -> bool:
+    return " ".join(a.split()).casefold() == " ".join(b.split()).casefold()
+
+
+# --- Acceso a Mister ----------------------------------------------------------
+
+def extract_cfg(html: str) -> dict:
+    """Lee el objeto `var _FG_cfg = {...};` que la página trae incrustado."""
+    m = re.search(r"var\s+_FG_cfg\s*=\s*", html)
+    if not m:
+        raise FeedError("No se encontró la configuración de la página (_FG_cfg): "
+                        "lo más probable es que la cookie haya caducado o la sesión esté cerrada.")
+    try:
+        cfg, _ = json.JSONDecoder().raw_decode(html[m.end():])
+    except ValueError:
+        raise FeedError("No se pudo leer la configuración de la página (_FG_cfg).")
+    if not isinstance(cfg, dict) or not cfg.get("auth"):
+        raise FeedError("La página no trae el token de acceso (auth): ¿sesión cerrada?")
+    return cfg
+
+
+def check_league(cfg: dict, expected: str) -> int | None:
+    """Comprueba que la liga activa de la sesión es la esperada. Devuelve el id de la comunidad."""
+    user = cfg.get("user") or {}
+    active = user.get("community")
+    if active and not same_text(str(active), expected):
+        raise FeedError(f"La liga activa de tu sesión es «{active}», no «{expected}». "
+                        f"Cambia de liga en Mister y copia de nuevo la cookie, "
+                        f"o define MISTER_LEAGUE_NAME con el nombre correcto.")
+    community = ((cfg.get("context") or {}).get("community") or {}).get("id") or user.get("id_community")
+    return int(community) if community else None
+
+
+def make_fetcher(cookie: str) -> tuple[Callable[[int], list[dict]], dict]:
+    """Abre la sesión, lee el token de /feed y devuelve (función_que_pide_páginas, configuración)."""
+    session = requests.Session()
+    for part in cookie.split(";"):
+        name, sep, value = part.strip().partition("=")
+        if sep and name:
+            session.cookies.set(name, value.strip(), domain=HOST)
+
+    page = session.get(
+        FEED_URL,
+        headers={"User-Agent": USER_AGENT, "Accept-Language": "es-ES,es;q=0.9",
+                 "Accept": "text/html,application/xhtml+xml,*/*;q=0.8"},
+        timeout=30,
+    )
+    page.raise_for_status()
+    cfg = extract_cfg(page.text)
+
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "*/*",
+        "Accept-Language": "es-ES,es;q=0.9",
+        "X-Requested-With": "XMLHttpRequest",
+        "X-Auth": str(cfg["auth"]),
+        "Origin": ORIGIN,
+        "Referer": FEED_URL,
+    }
+
+    def fetch_page(offset: int) -> list[dict]:
+        resp = session.post(
+            AJAX_URL,
+            data={"end": "false", "loading": "true", "offset": offset, "cardsPerPage": PAGE_SIZE},
+            headers=headers,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        try:
+            body = resp.json()
+        except ValueError:
+            raise FeedError("La respuesta del feed no es JSON: lo más probable es que la sesión haya caducado.")
+        if body.get("status") != "ok":
+            raise FeedError(f"Mister respondió status={body.get('status')!r}: ¿sesión caducada?")
+        return body.get("data") or []
+
+    return fetch_page, cfg
 
 
 # --- Lectura del feed ---------------------------------------------------------
@@ -50,12 +135,15 @@ def to_utc_iso(created: str | None) -> str | None:
     return local.astimezone(timezone.utc).isoformat(timespec="seconds")
 
 
-def parse_items(items: list[dict]) -> list[dict]:
+def parse_items(items: list[dict], community_id: int | None = None) -> list[dict]:
     """Extrae los clausulazos de una página del feed."""
     events: list[dict] = []
     for item in items:
         if item.get("category") != "transfer" or not isinstance(item.get("data"), list):
             continue
+        item_community = item.get("id_community")
+        if community_id and item_community and int(item_community) != community_id:
+            continue  # fichaje de otra liga
         for t in item["data"]:
             if not isinstance(t, dict) or t.get("type") != "clause":
                 continue
@@ -76,40 +164,8 @@ def parse_items(items: list[dict]) -> list[dict]:
     return events
 
 
-def make_fetcher(cookie: str) -> Callable[[int], list[dict]]:
-    session = requests.Session()
-    headers = {
-        "Cookie": cookie,
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-        "Accept": "application/json, text/javascript, */*; q=0.01",
-        "Accept-Language": "es-ES,es;q=0.9",
-        "X-Requested-With": "XMLHttpRequest",
-        "Origin": ORIGIN,
-        "Referer": FEED_URL,
-    }
-
-    def fetch_page(offset: int) -> list[dict]:
-        resp = session.post(
-            AJAX_URL,
-            data={"end": "false", "loading": "true", "offset": offset, "cardsPerPage": PAGE_SIZE},
-            headers=headers,
-            timeout=30,
-        )
-        resp.raise_for_status()
-        try:
-            body = resp.json()
-        except ValueError:
-            raise FeedError("La respuesta no es JSON: lo más probable es que la cookie haya caducado.")
-        if body.get("status") != "ok":
-            raise FeedError(f"Mister respondió status={body.get('status')!r}: ¿cookie caducada?")
-        return body.get("data") or []
-
-    return fetch_page
-
-
 def collect(fetch_page: Callable[[int], list[dict]], known_ids: set[str], full: bool,
-            pause: float = PAUSE_SECONDS) -> tuple[list[dict], bool, int]:
+            pause: float = PAUSE_SECONDS, community_id: int | None = None) -> tuple[list[dict], bool, int]:
     """Pide páginas del feed hacia atrás.
 
     Devuelve (clausulazos, llegó_al_final, páginas_leídas). En modo incremental
@@ -130,7 +186,7 @@ def collect(fetch_page: Callable[[int], list[dict]], known_ids: set[str], full: 
             break
         pages += 1
         seen_feed_ids |= fresh
-        events = parse_items(items)
+        events = parse_items(items, community_id)
         found.extend(events)
         if not full and any(ev["id"] in known_ids for ev in events):
             break                  # ya hemos enlazado con lo que teníamos guardado
@@ -191,7 +247,9 @@ def main() -> int:
     full = args.full or not store.get("complete_history")
 
     try:
-        found, reached_end, pages = collect(make_fetcher(cookie), known_ids, full)
+        fetch_page, cfg = make_fetcher(cookie)
+        community_id = check_league(cfg, LEAGUE_NAME)
+        found, reached_end, pages = collect(fetch_page, known_ids, full, community_id=community_id)
     except FeedError as err:
         print(f"ERROR: {err}", file=sys.stderr)
         return 3
