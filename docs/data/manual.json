@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-0b99c31b-25cc-4ff9-933f-5da79302ad85",
+      "player": "Xavi Espart",
+      "from": "Muñoz",
+      "to": "Todo Mal",
+      "price": 3476250,
+      "date": "2026-08-31"
+    },
+    {
       "id": "manual-9b177ce8-d9c6-47d2-b91d-76845375497f",
       "player": "Xavi Espart",
       "from": "Todo Mal",
