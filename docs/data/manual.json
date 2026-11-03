@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-1085b4c5-2a26-4ec4-9d1d-ccfb6770284f",
+      "player": "Facundo Gonzalez",
+      "from": "Muñoz",
+      "to": "Todo Mal",
+      "price": 2101500,
+      "date": "2026-08-03"
+    },
+    {
       "id": "manual-c2f54cf4-3da5-4866-ac1f-0f261c41d92b",
       "player": "Pere Milla",
       "from": "Muñoz",
