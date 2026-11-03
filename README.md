@@ -6,7 +6,7 @@ Lee el feed de la liga en Mister (el mismo servicio que carga más entradas al b
 scraper/mister_clausulazos.py   lee el feed y actualiza docs/data/clausulazos.json
 docs/                           la web (index.html, app.js, style.css, data/)
 .github/workflows/actualizar.yml  lo ejecuta cada 3 horas y guarda los cambios
-worker/index.js                 servicio (Cloudflare Worker) para añadir clausulazos a mano con contraseña
+worker/index.js                 servicio (Cloudflare Worker) para añadir y editar clausulazos a mano con contraseña
 docs/config.js                  aquí se pone la URL del Worker
 tests/                          pruebas del lector (python tests/test_scraper.py)
 ```
@@ -22,7 +22,7 @@ tests/                          pruebas del lector (python tests/test_scraper.py
 3. **Activa la web:** *Settings → Pages → Build and deployment → Deploy from a branch → `main` / carpeta `/docs`*.
 4. **Primera ejecución:** pestaña *Actions → Actualizar clausulazos → Run workflow*. Tu web quedará en `https://<usuario>.github.io/<repositorio>/`.
 
-## Añadir clausulazos a mano (con contraseña)
+## Añadir y editar clausulazos a mano (con contraseña)
 
 Sirve para meter los clausulazos antiguos que ya no aparecen en el feed. GitHub Pages es estático y una contraseña escrita en el código de la página la podría leer cualquiera, así que la contraseña se comprueba en un pequeño servicio gratuito (un Cloudflare Worker) que es el único que puede escribir en el repositorio. Los datos manuales se guardan en `docs/data/manual.json`, separados de los del feed.
 
@@ -33,9 +33,11 @@ Sirve para meter los clausulazos antiguos que ya no aparecen en el feed. GitHub 
    - Secretos: `ADMIN_PASSWORD` (elige una larga) y `GITHUB_TOKEN` (el del paso 1).
 4. **Conecta la web:** copia la URL del Worker (`https://…workers.dev`) en `docs/config.js`, en `addEndpoint`, y sube el cambio.
 
-Al final de la web aparecerá «Añadir clausulazos a mano». Se desbloquea con la contraseña (que se comprueba siempre en el Worker y no se guarda en el navegador), y permite añadir uno a uno o pegar varios con el formato `fecha;jugador;vendedor;comprador;importe`. Quien añade los ve al instante; el resto, en torno a un minuto, cuando GitHub Pages se actualiza.
+Al final de la web aparecerá «Añadir o editar clausulazos a mano». Se desbloquea con la contraseña (que se comprueba siempre en el Worker y no se guarda en el navegador), y permite añadir uno a uno o pegar varios con el formato `fecha;jugador;vendedor;comprador;importe`. Quien añade los ve al instante; el resto, en torno a un minuto, cuando GitHub Pages se actualiza.
 
-- Si te equivocas en un dato, edita o borra la entrada en `docs/data/manual.json` desde GitHub.
+- Para **editar** uno, desbloquea con la contraseña: en la tabla aparece un botón «Editar» en las filas marcadas como «manual». Se rellena el formulario, cambias lo que quieras y pulsas «Guardar cambios». Los clausulazos leídos del feed no se pueden editar desde la web.
+- Para **borrar** una entrada manual, edita `docs/data/manual.json` directamente en GitHub.
+- Si cambias `worker/index.js` (por ejemplo, al actualizar el proyecto), hay que volver a pegarlo en Cloudflare (*Edit code*) y pulsar *Deploy*; las variables y los secretos se conservan.
 - Los nombres se agrupan sin distinguir mayúsculas ni tildes («Muñoz» y «munoz» cuentan como el mismo manager), pero conviene escribirlos igual que en Mister; el formulario sugiere los ya existentes.
 - Un clausulazo manual que coincida con uno del feed (mismo jugador, vendedor, comprador e importe) no se cuenta dos veces.
 - Para cambiar la contraseña, cambia el secreto `ADMIN_PASSWORD` en Cloudflare.

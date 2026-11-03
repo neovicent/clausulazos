@@ -7,18 +7,28 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Ranking de clausulazos</h1>
-    <p id="subtitle" class="muted">Cargando…</p>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Mister</p>
+      <h1>Ranking de clausulazos</h1>
+      <p id="subtitle" class="hero-sub">Cargando…</p>
+    </div>
   </header>
 
-  <main>
+  <main class="wrap">
     <section class="kpis" id="kpis"></section>
 
     <section class="grid">
-      <div class="card"><h2>Quién más clausula</h2><div id="buyers"></div></div>
-      <div class="card"><h2>Quién más sufre clausulazos</h2><div id="sellers"></div></div>
-      <div class="card"><h2>Jugadores más clausulados</h2><div id="players"></div></div>
+      <div class="card">
+        <h2>Quién más clausula</h2>
+        <p class="sub">Clausulazos pagados</p>
+        <div id="buyers"></div>
+      </div>
+      <div class="card">
+        <h2>Quién más sufre clausulazos</h2>
+        <p class="sub">Jugadores perdidos por cláusula</p>
+        <div id="sellers"></div>
+      </div>
     </section>
 
     <section class="card">
@@ -27,9 +37,12 @@
         <input id="filter" type="search" placeholder="Filtrar por jugador o manager…" aria-label="Filtrar">
       </div>
       <div class="table-wrap">
-        <table>
+        <table class="main-table">
           <thead>
-            <tr><th>Fecha</th><th>Jugador</th><th>Vendedor</th><th>Comprador</th><th class="num">Importe</th></tr>
+            <tr>
+              <th>Fecha</th><th>Jugador</th><th>Vendedor</th><th>Comprador</th><th class="num">Importe</th>
+              <th id="th-actions" hidden></th>
+            </tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
@@ -38,7 +51,7 @@
     </section>
 
     <section class="card" id="admin" hidden>
-      <h2>Añadir clausulazos a mano</h2>
+      <h2>Añadir o editar clausulazos a mano</h2>
 
       <form id="unlock" class="stack">
         <label>Contraseña
@@ -52,15 +65,21 @@
 
       <div id="editor" hidden>
         <form id="add-form" class="form-grid">
+          <div id="edit-banner" class="edit-banner" hidden>
+            <span>Editando un clausulazo manual</span>
+            <button type="button" id="cancel-edit" class="ghost">Cancelar</button>
+          </div>
           <label>Fecha<input id="f-date" type="date" required></label>
           <label>Jugador<input id="f-player" list="dl-players" required maxlength="60"></label>
           <label>Vendedor<input id="f-from" list="dl-managers" required maxlength="60"></label>
           <label>Comprador<input id="f-to" list="dl-managers" required maxlength="60"></label>
           <label>Importe (€)<input id="f-price" inputmode="numeric" placeholder="6.127.500" required></label>
-          <div class="actions"><button type="submit">Añadir</button></div>
+          <div class="actions"><button type="submit" id="submit-btn">Añadir</button></div>
         </form>
         <datalist id="dl-players"></datalist>
         <datalist id="dl-managers"></datalist>
+
+        <p class="muted small">Para editar uno, pulsa «Editar» en su fila de la tabla (solo los añadidos a mano tienen ese botón).</p>
 
         <details>
           <summary>Añadir varios de golpe</summary>

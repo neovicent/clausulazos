@@ -4,6 +4,8 @@ const CFG = window.MISTER_CONFIG || {};
 const $ = (id) => document.getElementById(id);
 
 const eur = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const compact = new Intl.NumberFormat("es-ES", { notation: "compact", maximumFractionDigits: 1 });
+const plain = new Intl.NumberFormat("es-ES");
 const fmtDateTime = (iso) => new Date(iso).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" });
 const fmtDay = (iso) => new Date(iso).toLocaleDateString("es-ES", { dateStyle: "short", timeZone: "UTC" });
 
@@ -17,7 +19,20 @@ const norm = (s) =>
 
 const eventKey = (e) => [norm(e.player), norm(e.from), norm(e.to), e.price].join("|");
 
-const state = { league: "Liga", updated: null, feed: [], manual: [], all: [], password: null, filter: "" };
+const initials = (name) =>
+  String(name).split(/\s+/).filter(Boolean).slice(0, 2).map((w) => Array.from(w)[0]).join("").toUpperCase() || "?";
+
+// Color estable por manager, para que cada uno tenga siempre el mismo avatar.
+function hue(name) {
+  let h = 0;
+  for (const ch of norm(name)) h = (h * 31 + ch.codePointAt(0)) % 360;
+  return h;
+}
+
+const state = {
+  league: "Liga", updated: null, feed: [], manual: [], all: [],
+  password: null, filter: "", editing: null,
+};
 
 // --- Datos ------------------------------------------------------------------
 
@@ -55,29 +70,41 @@ function ranking(events, nameKey) {
   return [...map.values()].sort((a, b) => b.count - a.count || b.total - a.total).slice(0, 10);
 }
 
-function renderRanking(elId, list, withTotal) {
+function renderRanking(elId, list, kind) {
   const el = $(elId);
   if (!list.length) { el.innerHTML = '<p class="empty">Sin datos todavía.</p>'; return; }
+  const max = list[0].count;
   el.innerHTML =
-    "<table><tbody>" +
+    `<ol class="rank-list ${kind}">` +
     list.map((r, i) =>
-      `<tr><td>${i + 1}</td><td>${esc(r.name)}</td><td class="num">${r.count}</td>` +
-      (withTotal ? `<td class="num">${eur.format(r.total)}</td>` : "") + "</tr>"
+      `<li class="rk rk-${i + 1}">` +
+        `<span class="pos">${i + 1}</span>` +
+        `<span class="avatar" style="--h:${hue(r.name)}">${esc(initials(r.name))}</span>` +
+        `<div class="who"><div class="name">${esc(r.name)}</div>` +
+          `<div class="bar"><i style="width:${Math.max(6, Math.round((r.count / max) * 100))}%"></i></div></div>` +
+        `<div class="nums"><b>${r.count}</b><small>${esc(compact.format(r.total))} €</small></div>` +
+      `</li>`
     ).join("") +
-    "</tbody></table>";
+    "</ol>";
 }
 
 function renderRows() {
   const needle = norm(state.filter);
+  const canEdit = Boolean(state.password);
+  $("th-actions").hidden = !canEdit;
   const rows = state.all.filter((e) =>
     !needle || [e.player, e.from, e.to].some((t) => norm(t).includes(needle)));
   $("rows").innerHTML = rows.length
     ? rows.map((e) =>
-        `<tr><td>${e.manual ? `${esc(fmtDay(e.when))} <span class="tag">manual</span>` : esc(fmtDateTime(e.when))}</td>` +
+        `<tr><td class="when">${e.manual ? `${esc(fmtDay(e.when))}<span class="tag">manual</span>` : esc(fmtDateTime(e.when))}</td>` +
         `<td>${esc(e.player)}</td><td>${esc(e.from)}</td><td>${esc(e.to)}</td>` +
-        `<td class="num">${eur.format(e.price)}</td></tr>`
+        `<td class="num">${eur.format(e.price)}</td>` +
+        (canEdit
+          ? `<td class="act">${e.manual ? `<button type="button" class="mini" data-edit="${esc(e.id)}">Editar</button>` : ""}</td>`
+          : "") +
+        `</tr>`
       ).join("")
-    : '<tr><td colspan="5" class="empty">Ningún clausulazo coincide.</td></tr>';
+    : '<tr><td colspan="6" class="empty">Ningún clausulazo coincide.</td></tr>';
 }
 
 function renderDatalists() {
@@ -96,18 +123,18 @@ function render() {
   $("subtitle").textContent =
     `${state.league} · última lectura del feed: ${state.updated ? fmtDateTime(state.updated) : "—"}`;
   $("kpis").innerHTML =
-    `<div class="kpi"><b>${events.length}</b>clausulazos</div>` +
-    `<div class="kpi"><b>${eur.format(total)}</b>movido en cláusulas</div>` +
-    `<div class="kpi"><b>${top ? eur.format(top.price) : "—"}</b>el más caro${top ? ` (${esc(top.player)})` : ""}</div>`;
+    `<div class="kpi"><div class="ico">🔥</div><div><b>${events.length}</b><span>clausulazos</span></div></div>` +
+    `<div class="kpi"><div class="ico">💶</div><div><b>${eur.format(total)}</b><span>movido en cláusulas</span></div></div>` +
+    `<div class="kpi"><div class="ico">👑</div><div><b>${top ? eur.format(top.price) : "—"}</b>` +
+      `<span>el más caro${top ? ` · ${esc(top.player)}` : ""}</span></div></div>`;
 
-  renderRanking("buyers", ranking(events, "to"), true);
-  renderRanking("sellers", ranking(events, "from"), true);
-  renderRanking("players", ranking(events, "player"), false);
+  renderRanking("buyers", ranking(events, "to"), "buy");
+  renderRanking("sellers", ranking(events, "from"), "sell");
   renderRows();
   renderDatalists();
 }
 
-// --- Añadir a mano ------------------------------------------------------------
+// --- Añadir y editar a mano ---------------------------------------------------
 
 const parsePrice = (t) => {
   const digits = String(t || "").replace(/\D/g, "");
@@ -146,11 +173,35 @@ function setStatus(id, msg, isError = false) {
   el.classList.toggle("error", isError);
 }
 
+function stopEdit() {
+  state.editing = null;
+  $("edit-banner").hidden = true;
+  $("submit-btn").textContent = "Añadir";
+  for (const id of ["f-date", "f-player", "f-from", "f-to", "f-price"]) $(id).value = "";
+}
+
+function startEdit(id) {
+  const ev = state.manual.find((e) => e.id === id);
+  if (!ev || !state.password) return;
+  state.editing = id;
+  $("f-date").value = ev.date;
+  $("f-player").value = ev.player;
+  $("f-from").value = ev.from;
+  $("f-to").value = ev.to;
+  $("f-price").value = plain.format(ev.price);
+  $("edit-banner").hidden = false;
+  $("submit-btn").textContent = "Guardar cambios";
+  setStatus("add-status", "");
+  if ($("add-form").scrollIntoView) $("add-form").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
 function lock(message = "") {
   state.password = null;
+  stopEdit();
   $("editor").hidden = true;
   $("unlock").hidden = false;
   setStatus("unlock-status", message, Boolean(message));
+  renderRows();
 }
 
 async function callWorker(path, payload) {
@@ -162,7 +213,7 @@ async function callWorker(path, payload) {
       body: JSON.stringify(payload),
     });
   } catch {
-    throw new Error("No se pudo contactar con el servicio. Inténtalo de nuevo.");
+    throw new Error("No se pudo contactar con el servicio. Si usas un bloqueador de anuncios, prueba a desactivarlo para esta web.");
   }
   let body = {};
   try { body = await res.json(); } catch { /* respuesta sin JSON */ }
@@ -187,6 +238,22 @@ async function addEvents(events) {
   }
 }
 
+async function updateEvent(id, event) {
+  setStatus("add-status", "Guardando…");
+  try {
+    const r = await callWorker("/update", { password: state.password, id, event });
+    state.manual = state.manual.map((e) => (e.id === id ? r.updated : e));
+    buildAll();
+    render();
+    stopEdit();
+    setStatus("add-status", "Cambios guardados. Los demás los verán en un minuto aproximadamente.");
+    return true;
+  } catch (err) {
+    if (state.password) setStatus("add-status", err.message, true);
+    return false;
+  }
+}
+
 function setupAdmin() {
   if (!CFG.addEndpoint) return;
   $("admin").hidden = false;
@@ -203,24 +270,36 @@ function setupAdmin() {
       $("editor").hidden = false;
       setStatus("unlock-status", "");
       setStatus("add-status", "");
+      renderRows();
     } catch (err) {
       setStatus("unlock-status", err.message, true);
     }
   });
 
   $("lock").addEventListener("click", () => lock());
+  $("cancel-edit").addEventListener("click", () => { stopEdit(); setStatus("add-status", ""); });
+
+  $("rows").addEventListener("click", (ev) => {
+    const btn = ev.target && ev.target.closest ? ev.target.closest("button[data-edit]") : null;
+    if (btn) startEdit(btn.dataset.edit);
+  });
 
   $("add-form").addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const price = parsePrice($("f-price").value);
     if (!price) { setStatus("add-status", "Importe no válido.", true); return; }
-    const ok = await addEvents([{
+    const event = {
       date: $("f-date").value,
       player: $("f-player").value,
       from: $("f-from").value,
       to: $("f-to").value,
       price,
-    }]);
+    };
+    if (state.editing) {
+      await updateEvent(state.editing, event);
+      return;
+    }
+    const ok = await addEvents([event]);
     if (ok) { $("f-player").value = ""; $("f-price").value = ""; $("f-player").focus(); }
   });
 

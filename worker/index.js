@@ -1,6 +1,7 @@
-// Cloudflare Worker: comprueba la contraseña y guarda clausulazos manuales
+// Cloudflare Worker: comprueba la contraseña y guarda/edita clausulazos manuales
 // en docs/data/manual.json del repositorio (commit vía API de GitHub).
 //
+// Rutas (todas POST con JSON): /check, /add, /update
 // Variables de texto:  ALLOWED_ORIGIN (https://usuario.github.io), GITHUB_REPO (usuario/repo),
 //                      GITHUB_BRANCH (opcional, por defecto "main")
 // Secretos:            ADMIN_PASSWORD, GITHUB_TOKEN (permiso Contents: Read and write, solo ese repo)
@@ -9,6 +10,13 @@ const FILE_PATH = "docs/data/manual.json";
 const MAX_EVENTS = 100;
 const MAX_ATTEMPTS = 3;
 const enc = new TextEncoder();
+
+class UserError extends Error {
+  constructor(message, status = 400) {
+    super(message);
+    this.status = status;
+  }
+}
 
 const corsHeaders = (env) => ({
   "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN || "",
@@ -43,9 +51,8 @@ const norm = (s) =>
 
 const eventKey = (e) => [e.date, norm(e.player), norm(e.from), norm(e.to), e.price].join("|");
 
-// Devuelve { event } o { error }.
-function cleanEvent(raw, index) {
-  const where = `Clausulazo ${index + 1}`;
+// Devuelve { event } o { error }. `where` abre el mensaje de error ("Clausulazo 2", "El clausulazo"...).
+function cleanEvent(raw, where) {
   const text = (v) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "");
   const player = text(raw?.player);
   const from = text(raw?.from);
@@ -88,7 +95,10 @@ function utf8ToB64(text) {
   return btoa(bin);
 }
 
-async function appendManual(env, incoming) {
+// Lee manual.json, aplica `mutate(store)` y lo guarda con un commit.
+// mutate devuelve { changed, result, message } o lanza UserError.
+// Si alguien escribe a la vez (409), se vuelve a leer y a aplicar.
+async function modifyManual(env, mutate) {
   const repo = env.GITHUB_REPO;
   const branch = env.GITHUB_BRANCH || "main";
   const url = `https://api.github.com/repos/${repo}/contents/${FILE_PATH}`;
@@ -106,6 +116,28 @@ async function appendManual(env, incoming) {
       throw new Error(`GitHub respondió ${getRes.status} al leer el archivo.`);
     }
 
+    const out = mutate(store);
+    if (!out.changed) return out.result;
+
+    const putRes = await fetch(url, {
+      method: "PUT",
+      headers: { ...ghHeaders(env), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: out.message,
+        content: utf8ToB64(JSON.stringify(store, null, 2) + "\n"),
+        branch,
+        ...(sha ? { sha } : {}),
+      }),
+    });
+    if (putRes.ok) return out.result;
+    if (putRes.status === 409 && attempt < MAX_ATTEMPTS - 1) continue;
+    throw new Error(`GitHub respondió ${putRes.status} al guardar.`);
+  }
+  throw new Error("No se pudo guardar tras varios intentos.");
+}
+
+const addEvents = (env, incoming) =>
+  modifyManual(env, (store) => {
     const known = new Set(store.events.map(eventKey));
     const added = [];
     for (const ev of incoming) {
@@ -114,25 +146,27 @@ async function appendManual(env, incoming) {
       known.add(k);
       added.push({ id: `manual-${crypto.randomUUID()}`, ...ev });
     }
-    if (!added.length) return { added: [], skipped: incoming.length };
-
     store.events = [...added, ...store.events];
-    const putRes = await fetch(url, {
-      method: "PUT",
-      headers: { ...ghHeaders(env), "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: `Añade ${added.length} clausulazo(s) manual(es)`,
-        content: utf8ToB64(JSON.stringify(store, null, 2) + "\n"),
-        branch,
-        ...(sha ? { sha } : {}),
-      }),
-    });
-    if (putRes.ok) return { added, skipped: incoming.length - added.length };
-    if (putRes.status === 409 && attempt < MAX_ATTEMPTS - 1) continue; // alguien escribió a la vez: reintentar
-    throw new Error(`GitHub respondió ${putRes.status} al guardar.`);
-  }
-  throw new Error("No se pudo guardar tras varios intentos.");
-}
+    return {
+      changed: added.length > 0,
+      result: { added, skipped: incoming.length - added.length },
+      message: `Añade ${added.length} clausulazo(s) manual(es)`,
+    };
+  });
+
+const updateEvent = (env, id, event) =>
+  modifyManual(env, (store) => {
+    const i = store.events.findIndex((e) => e.id === id);
+    if (i < 0) throw new UserError("No se encontró ese clausulazo (¿se ha borrado?).", 404);
+    const key = eventKey(event);
+    if (store.events.some((e, j) => j !== i && eventKey(e) === key)) {
+      throw new UserError("Ya existe otro clausulazo manual igual.");
+    }
+    const updated = { id, ...event };
+    const same = eventKey(store.events[i]) === key;
+    if (!same) store.events[i] = updated;
+    return { changed: !same, result: { updated }, message: "Edita un clausulazo manual" };
+  });
 
 // --- Rutas ------------------------------------------------------------------
 
@@ -154,22 +188,31 @@ export default {
     }
 
     const path = new URL(request.url).pathname;
-    if (path === "/check") return json(env, 200, { ok: true });
+    try {
+      if (path === "/check") return json(env, 200, { ok: true });
 
-    if (path === "/add") {
-      if (!Array.isArray(body.events) || !body.events.length) return json(env, 400, { error: "No hay clausulazos que añadir." });
-      if (body.events.length > MAX_EVENTS) return json(env, 400, { error: `Máximo ${MAX_EVENTS} clausulazos por envío.` });
-      const cleaned = [];
-      for (const [i, raw] of body.events.entries()) {
-        const { event, error } = cleanEvent(raw, i);
-        if (error) return json(env, 400, { error });
-        cleaned.push(event);
+      if (path === "/add") {
+        if (!Array.isArray(body.events) || !body.events.length) throw new UserError("No hay clausulazos que añadir.");
+        if (body.events.length > MAX_EVENTS) throw new UserError(`Máximo ${MAX_EVENTS} clausulazos por envío.`);
+        const cleaned = [];
+        for (const [i, raw] of body.events.entries()) {
+          const { event, error } = cleanEvent(raw, `Clausulazo ${i + 1}`);
+          if (error) throw new UserError(error);
+          cleaned.push(event);
+        }
+        return json(env, 200, await addEvents(env, cleaned));
       }
-      try {
-        return json(env, 200, await appendManual(env, cleaned));
-      } catch (err) {
-        return json(env, 502, { error: err.message });
+
+      if (path === "/update") {
+        const id = typeof body.id === "string" ? body.id : "";
+        if (!/^manual-[\w-]{1,64}$/.test(id)) throw new UserError("Identificador no válido.");
+        const { event, error } = cleanEvent(body.event, "El clausulazo");
+        if (error) throw new UserError(error);
+        return json(env, 200, await updateEvent(env, id, event));
       }
+    } catch (err) {
+      if (err instanceof UserError) return json(env, err.status, { error: err.message });
+      return json(env, 502, { error: err.message });
     }
     return json(env, 404, { error: "No encontrado." });
   },
