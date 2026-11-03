@@ -1,6 +1,14 @@
 {
   "events": [
     {
+      "id": "manual-52658846-954b-47bc-8688-d296db826ec1",
+      "player": "Iván Martín",
+      "from": "Todo Mal",
+      "to": "Minabo de Kief",
+      "price": 4954500,
+      "date": "2026-09-10"
+    },
+    {
       "id": "manual-4e290f4e-81a3-4cc2-8d32-5bf00be1248a",
       "player": "Iván Martín",
       "from": "Minabo de Kief",
