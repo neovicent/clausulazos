@@ -1,7 +1,18 @@
 {
   "league": "Los liguis 2.0",
-  "updated": "2026-11-08T22:09:39+00:00",
+  "updated": "2026-11-09T06:38:20+00:00",
   "events": [
+    {
+      "id": "t558367074",
+      "player_id": "59789",
+      "player": "Orri Óskarsson",
+      "from_id": "14677550",
+      "from": "La niña mala",
+      "to_id": "14715516",
+      "to": "Florentineza CF",
+      "price": 5499000,
+      "created": "2026-11-08T22:54:33+00:00"
+    },
     {
       "id": "t557849867",
       "player_id": "3849388",
