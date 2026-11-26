@@ -1,7 +1,18 @@
 {
   "league": "Los liguis 2.0",
-  "updated": "2026-11-26T03:36:07+00:00",
+  "updated": "2026-11-26T16:57:40+00:00",
   "events": [
+    {
+      "id": "t560807785",
+      "player_id": "65625",
+      "player": "Tani Oluwaseyi",
+      "from_id": "14571878",
+      "from": "Laporta FC",
+      "to_id": "14677550",
+      "to": "La niña mala",
+      "price": 1000000,
+      "created": "2026-11-26T16:53:57+00:00"
+    },
     {
       "id": "t558367074",
       "player_id": "59789",
