@@ -1,7 +1,18 @@
 {
   "league": "Los liguis 2.0",
-  "updated": "2026-11-27T12:27:12+00:00",
+  "updated": "2026-11-27T23:28:52+00:00",
   "events": [
+    {
+      "id": "t560990718",
+      "player_id": "65625",
+      "player": "Tani Oluwaseyi",
+      "from_id": "14677550",
+      "from": "La niña mala",
+      "to_id": "14715516",
+      "to": "Florentineza CF",
+      "price": 1500000,
+      "created": "2026-11-27T22:26:27+00:00"
+    },
     {
       "id": "t560813795",
       "player_id": "3844425",
